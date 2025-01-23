@@ -1,0 +1,136 @@
+#patroni.yml file configure cho node postgres-patroni 01
+namespace: /service/
+scope: testcluster
+name: pgsql1
+#khai bao logs va che do logs
+log:
+  level: DEBUG
+  traceback_level: debug
+  dir: /var/log/
+# khai bao listen api su dung cho ket noi den patroni lay thong tin cac node trong cluster
+restapi:
+  listen: 0.0.0.0:8008
+  #connect_address: 10.220.20.109:8009
+
+#khai bao ket noi den etcd cluster
+etcd:
+  hosts: ["10.1.6.30:2379", "10.1.6.31:2379"]
+#bootstrap configure postgressql
+bootstrap:
+  dcs:
+    ttl: 90
+    loop_wait: 10
+    retry_timeout: 40
+    maximum_lag_on_failover: 1048576
+    postgresql:
+      use_pg_rewind: true
+      use_slots: true
+      parameters:
+        wal_level: logical
+        hot_standby: 'on'
+        wal_keep_segments: 8
+        max_wal_senders: 6
+        max_replication_slots: 6
+        checkpoint_timeout: 10min
+        max_connections: 100
+        # max_locks_per_transaction: 128
+        max_wal_size: 1GB
+  initdb:
+  - encoding: UTF8
+  - locale: C.UTF-8
+  pg_hba:
+  - host all all 0.0.0.0/0 trust
+  - host replication replicator 10.1.6.31/32    trust
+  users:
+    postgres:
+      password: postgres
+      options:
+      - createrole
+      - createdb
+      - superuser
+    replicator:
+      password: changeme
+      options:
+      - replication
+tags: {}
+postgresql:
+  # data_dir: "<your prefered data dir>"
+  # config_dir: "<generally your data>"
+  # bin_dir: "<if you need to specify the version>"
+  data_dir: /var/lib/postgresql/data
+  #bin_dir: /usr/pgsql/17/bin
+  listen: 0.0.0.0:5432
+  pg_ctl_timeout: '60'
+  parameters:
+    port: 5432
+    # ssl: 'on'
+    # ssl_ciphers: HIGH:MEDIUM:+3DES:!aNULL:!SSLv3:!TLSv1
+    # log_destination: csvlog
+    # archive_command: "/opt/wal-g/bin/archive-walg.sh %p"
+    archive_command: "/bin/true"
+    archive_mode: 'on'
+    archive_timeout: 1min
+    autovacuum_analyze_scale_factor: '0.005'
+    autovacuum_max_workers: '10'
+    autovacuum_vacuum_cost_delay: 5ms
+    autovacuum_vacuum_cost_limit: 6000
+    autovacuum_vacuum_scale_factor: '0.005'
+    auto_explain.log_min_duration: -1
+    checkpoint_completion_target: 0.9
+    deadlock_timeout: 5s
+    default_statistics_target: '1000'
+    default_text_search_config: pg_catalog.english
+    effective_cache_size: 338688MB
+    effective_io_concurrency: 100
+    # hba_file: "<another location for the hba file"
+    hot_standby_feedback: 'on'
+    huge_pages: try
+    idle_in_transaction_session_timeout: 30s
+    jit: 'off'
+    lc_messages: C
+    log_autovacuum_min_duration: '0'
+    log_checkpoints: 'on'
+    log_line_prefix: "%m [%p, %x]: [%l-1] user=%u,db=%d,app=%a,client=%h "
+    log_connections: 'on'
+    log_disconnections: 'on'
+    log_statement: ddl
+    log_lock_waits: 'on'
+    log_min_duration_statement: 1000
+    log_temp_files: 0
+    logging_collector: 'on'
+    # log_directory: "<log directory>"
+    log_filename: postgresql.log
+    log_file_mode: '0640'
+    log_rotation_age: 0
+    log_rotation_size: 0
+    maintenance_work_mem: 248MB
+    random_page_cost: 1.5
+    # shared_buffers: 112896MB
+    shared_buffers: 128MB
+    shared_preload_libraries: pg_stat_statements,auto_explain
+    # ssl_ca_file: ''
+    # ssl_cert_file: "<dir>/postgresql/server.crt"
+    # ssl_key_file: "<dir>/postgresql/server.key"
+    statement_timeout: '15000'
+    tcp_keepalives_count: 0
+    tcp_keepalives_idle: 0
+    tcp_keepalives_interval: 0
+    track_activity_query_size: '4096'
+    track_io_timing: 'on'
+    # unix_socket_directories: "<dir>/postgresql"
+    work_mem: 2MB
+  authentication:
+    superuser:
+      username: postgres
+      password: changeme
+    replication:
+      username: replicator
+      password: changeme
+  # connect_address: 10.220.20.109:5432
+  # callbacks:
+    # on_role_change: "<dir>/scripts/post-failover-maintenance.sh"
+  # recovery_conf:
+  #   restore_command: "/usr/bin/envdir /etc/wal-g.d/env /opt/wal-g/bin/wal-g wal-fetch
+      # %f %p"
+
+
