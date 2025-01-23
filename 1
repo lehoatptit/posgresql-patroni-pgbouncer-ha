@@ -1,0 +1,49 @@
+version: "3.8"
+
+services:
+  etcd2:
+    image: quay.io/coreos/etcd:v3.4.15
+    container_name: etcd2
+    entrypoint: /usr/local/bin/etcd
+    command:
+      - '--name=etcd2'  
+      - '--initial-advertise-peer-urls=http://10.1.6.32:2380'
+      - '--listen-peer-urls=http://0.0.0.0:2380'
+      - '--listen-client-urls=http://0.0.0.0:2379'
+      - '--advertise-client-urls=http://10.1.6.32:2379'
+      - '--initial-cluster-token=mys3cr3ttok3n'
+      - '--heartbeat-interval=250'
+      - '--election-timeout=1250'
+      - '--initial-cluster=etcd1=http://10.1.6.31:2380,etcd2=http://10.1.6.32:2380'  
+      - '--initial-cluster-state=new'
+      - '--enable-v2=true'
+    ports:
+      - 2379:2379  
+      - 2380:2380 
+    volumes:
+      - etcd2:/etcd_data
+    networks:
+      - patroni_network
+
+  patroni2:
+    image: patroni:4.0.4
+    container_name: patroni02
+    networks:
+      - patroni_network
+    volumes:
+      - ./conf/patroni.yml:/etc/patroni.yml
+      - pg_data:/var/lib/postgresql/data
+    ports:
+      - 8008:8008
+      - 5432:5432
+
+networks:
+  patroni_network:
+    driver: bridge
+
+volumes:
+  etcd2:
+    external: true
+  pg_data:
+    external: true
+
